@@ -26,14 +26,14 @@ lazy_static! {
     };
 }
 
-struct Game {
+pub struct Game {
     grid: [u32; 16],
     zero: Vec<u32>,
     score: u32,
 }
 
 impl Game {
-    fn new() -> Game {
+    pub fn new() -> Game {
         Game {
             grid: from_fn(|_| 0),
             zero: (0..=15).collect(),

@@ -1,5 +1,9 @@
-mod game;
+mod colors;
+
+//mod game;
+//mod graphics;
 
 fn main() {
-    println!("Hello, world!");
+    let colors = colors::Colors::new();
+    println!("{:?}", colors.get(&(-1)));
 }
