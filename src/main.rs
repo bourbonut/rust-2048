@@ -11,6 +11,7 @@
 use ggez::conf::WindowMode;
 use ggez::event;
 use ggez::glam::*;
+use ggez::graphics::Drawable;
 use ggez::graphics::FontData;
 use ggez::graphics::PxScale;
 use ggez::graphics::TextFragment;
@@ -64,10 +65,11 @@ impl event::EventHandler<ggez::GameError> for MainState {
             let text = graphics::Text::new(
                 TextFragment::new("2")
                     .font("ClearSans-Bold")
-                    .scale(PxScale::from(56.0)),
+                    .scale(PxScale::from(1.2 * 56.0)),
             );
+            let [w, h] = text.dimensions(ctx).unwrap().center().into();
             canvas.draw(&rect, *location);
-            canvas.draw(&text, *location);
+            canvas.draw(&text, *location + Vec2::new(53. - w, 53. - h - 5.));
         }
 
         canvas.finish(ctx)?;
