@@ -17,7 +17,7 @@ use ggez::graphics::Drawable;
 use ggez::graphics::FontData;
 use ggez::graphics::PxScale;
 use ggez::graphics::TextFragment;
-use ggez::graphics::{self, Color, Rect};
+use ggez::graphics::{self, Rect};
 use ggez::{Context, GameResult};
 use std::fs::File;
 use std::io::Read;
@@ -61,24 +61,27 @@ impl event::EventHandler<ggez::GameError> for MainState {
             graphics::Canvas::from_frame(ctx, graphics::Color::from_rgb(183, 173, 160));
 
         for (i, location) in self.locations.iter().enumerate() {
-            let color = 2_i64.pow(i as u32 + 1);
-            let color_item = self.scheme.get(&color).unwrap();
+            let number = 2_i64.pow(i as u32 + 1);
+            let sprite_desc = self.scheme.get(&number).unwrap();
             let rect = graphics::Mesh::new_rounded_rectangle(
                 ctx,
                 graphics::DrawMode::fill(),
                 Rect::new(0., 0., 105., 105.),
                 5.,
-                Color::from_rgb(color_item.rgb[0], color_item.rgb[1], color_item.rgb[2]),
+                sprite_desc.rgb,
             )?;
             let text = graphics::Text::new(
-                TextFragment::new(format!("{}", color))
+                TextFragment::new(format!("{}", number))
                     .font("ClearSans-Bold")
-                    .color(Color::from_rgb(color_item.font_color[0], color_item.font_color[1], color_item.font_color[2]))
-                    .scale(PxScale::from(1.3 * color_item.size as f32)),
+                    .color(sprite_desc.font_color)
+                    .scale(PxScale::from(sprite_desc.size as f32)),
             );
             let [w, h] = text.dimensions(ctx).unwrap().center().into();
             canvas.draw(&rect, *location);
-            canvas.draw(&text, *location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32));
+            canvas.draw(
+                &text,
+                *location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
+            );
         }
 
         canvas.finish(ctx)?;
