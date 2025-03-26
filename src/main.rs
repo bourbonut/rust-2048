@@ -8,6 +8,8 @@
 //    println!("{:?}", colors.get(&(-1)));
 //}
 
+mod schemes;
+
 use ggez::conf::WindowMode;
 use ggez::event;
 use ggez::glam::*;
@@ -20,9 +22,12 @@ use ggez::{Context, GameResult};
 use std::fs::File;
 use std::io::Read;
 
+use schemes::Scheme;
+
 struct MainState {
     pos_x: f32,
     locations: Vec<Vec2>,
+    scheme: Scheme,
 }
 
 impl MainState {
@@ -39,6 +44,7 @@ impl MainState {
                     (0..4).map(move |j| Vec2::new((15 + 121 * j) as f32, (15 + 121 * i) as f32))
                 })
                 .collect(),
+            scheme: Scheme::new(),
         };
         Ok(s)
     }
@@ -54,22 +60,25 @@ impl event::EventHandler<ggez::GameError> for MainState {
         let mut canvas =
             graphics::Canvas::from_frame(ctx, graphics::Color::from_rgb(183, 173, 160));
 
-        for location in &self.locations {
+        for (i, location) in self.locations.iter().enumerate() {
+            let color = 2_i64.pow(i as u32 + 1);
+            let color_item = self.scheme.get(&color).unwrap();
             let rect = graphics::Mesh::new_rounded_rectangle(
                 ctx,
                 graphics::DrawMode::fill(),
                 Rect::new(0., 0., 105., 105.),
                 5.,
-                Color::from_rgb(238, 228, 218),
+                Color::from_rgb(color_item.rgb[0], color_item.rgb[1], color_item.rgb[2]),
             )?;
             let text = graphics::Text::new(
-                TextFragment::new("2")
+                TextFragment::new(format!("{}", color))
                     .font("ClearSans-Bold")
-                    .scale(PxScale::from(1.2 * 56.0)),
+                    .color(Color::from_rgb(color_item.font_color[0], color_item.font_color[1], color_item.font_color[2]))
+                    .scale(PxScale::from(1.3 * color_item.size as f32)),
             );
             let [w, h] = text.dimensions(ctx).unwrap().center().into();
             canvas.draw(&rect, *location);
-            canvas.draw(&text, *location + Vec2::new(53. - w, 53. - h - 5.));
+            canvas.draw(&text, *location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32));
         }
 
         canvas.finish(ctx)?;
