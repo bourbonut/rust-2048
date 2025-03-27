@@ -1,5 +1,6 @@
 mod colors;
 mod graphics;
+mod game;
 
 use graphics::MainState;
 use ggez::conf::WindowMode;

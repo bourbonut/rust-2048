@@ -4,20 +4,15 @@ use ggez::glam::*;
 use ggez::graphics::{
     Canvas, DrawMode, Drawable, FontData, Mesh, PxScale, Rect, Text, TextFragment,
 };
+use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 
 use crate::colors::{GameColor, BACKGROUND, SPRITES};
-
-pub struct MainState {
-    pos_x: f32,
-    locations: Vec<Vec2>,
-    background: GameColor,
-    cells: [Cell; 18],
-}
+use crate::game::Game;
 
 struct Cell {
-    pub rect: Mesh,
-    pub text: Text,
+    rect: Mesh,
+    text: Text,
 }
 
 impl Cell {
@@ -44,6 +39,15 @@ impl Cell {
     }
 }
 
+
+pub struct MainState {
+    game: Game,
+    key: i8,
+    locations: Vec<Vec2>,
+    background: GameColor,
+    cells: [Cell; 18],
+}
+
 impl MainState {
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
         let font = FontData::from_path(&ctx.fs, PathBuf::from("/clear-sans.bold.ttf"))?;
@@ -51,7 +55,8 @@ impl MainState {
 
         let mut number: u32 = 0;
         let s = MainState {
-            pos_x: 0.0,
+            game: Game::new(),
+            key: 0,
             locations: (0..4)
                 .flat_map(|i| {
                     (0..4).map(move |j| Vec2::new((15 + 121 * j) as f32, (15 + 121 * i) as f32))
@@ -70,7 +75,9 @@ impl MainState {
 
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        self.pos_x = self.pos_x % 800.0 + 1.0;
+        if self.key != 0 {
+            self.game.action(self.key, true);
+        }
         Ok(())
     }
 
@@ -90,6 +97,36 @@ impl event::EventHandler<ggez::GameError> for MainState {
         }
 
         canvas.finish(ctx)?;
+        Ok(())
+    }
+
+    fn key_down_event(
+            &mut self,
+            _ctx: &mut Context,
+            input: ggez::input::keyboard::KeyInput,
+            _repeated: bool,
+        ) -> Result<(), ggez::GameError> {
+        if let Some(keycode) = input.keycode {
+            match keycode {
+                KeyCode::Up => {
+                    self.key = -4;
+                },
+                KeyCode::Down => {
+                    self.key = 4;
+                },
+                KeyCode::Left => {
+                    self.key = -1;
+                },
+                KeyCode::Right => {
+                    self.key = 1;
+                },
+                _ => {
+                    self.key = 0;
+                }
+            }
+        } else {
+            self.key = 0;
+        }
         Ok(())
     }
 }

@@ -134,7 +134,7 @@ impl Game {
         self.zero.remove(r);
     }
 
-    fn action(&mut self, key: i8, rd: bool) -> bool {
+    pub fn action(&mut self, key: i8, rd: bool) -> bool {
         if self.partial_move(key) {
             self.move_zero(&ORDERS[&key]);
             self.compare(&ORDERS[&(-key)]);
