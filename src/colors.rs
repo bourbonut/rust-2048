@@ -1,8 +1,8 @@
 use ggez::graphics::Color;
 
-pub const BACKGROUND: ([u8; 3], u32, [u8; 3]) = ([183, 173, 160], 0, [119, 110, 101]);
+pub static BACKGROUND: ([u8; 3], u32, [u8; 3]) = ([183, 173, 160], 0, [119, 110, 101]);
 // background color, size, font color
-pub const SPRITES: [([u8; 3], u32, [u8; 3]); 18] = [
+pub static SPRITES: [([u8; 3], u32, [u8; 3]); 18] = [
     ([205, 193, 180], 0, [119, 110, 101]),  // 0
     ([238, 228, 218], 56, [119, 110, 101]), // 2
     ([237, 224, 200], 56, [119, 110, 101]), // 4
