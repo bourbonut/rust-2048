@@ -18,8 +18,8 @@ use ggez::graphics::{
     Canvas, DrawMode, Drawable, FontData, Mesh, PxScale, Rect, Text, TextFragment,
 };
 use ggez::{Context, GameResult};
-use std::fs::File;
-use std::io::Read;
+use std::env::current_dir;
+use std::path::PathBuf;
 
 use colors::{GameColor, BACKGROUND, SPRITES};
 
@@ -32,10 +32,7 @@ struct MainState {
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let mut file = File::open("../clear-sans.bold.ttf")?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf)?;
-        let font = FontData::from_vec(buf)?;
+        let font = FontData::from_path(&ctx.fs, PathBuf::from("/clear-sans.bold.ttf"))?;
         ctx.gfx.add_font("ClearSans-Bold", font);
 
         let s = MainState {
@@ -91,13 +88,17 @@ impl event::EventHandler<ggez::GameError> for MainState {
 }
 
 pub fn main() -> GameResult {
+    let current_path = current_dir().unwrap();
+    let resources_path = current_path.join(PathBuf::from("resources"));
     let cb = ggez::ContextBuilder::new("game2048", "bourbonut")
+        .add_resource_path(resources_path)
         .window_mode(WindowMode::default().dimensions(500., 500.))
         .window_setup(
             WindowSetup::default()
                 .title("2048"),
-                //.icon("logo.png"),
+                //.icon("/logo.png"),
         );
+
     let (mut ctx, event_loop) = cb.build()?;
     let state = MainState::new(&mut ctx)?;
     event::run(ctx, event_loop, state)
