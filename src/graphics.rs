@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+use std::u32;
+use std::usize;
 use ggez::event;
 use ggez::glam::*;
 use ggez::graphics::{
@@ -8,7 +10,7 @@ use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 
 use crate::colors::{GameColor, BACKGROUND, SPRITES};
-use crate::game::Game;
+use crate::game::{Game, ORDERS};
 
 struct Cell {
     rect: Mesh,
@@ -46,6 +48,11 @@ pub struct MainState {
     locations: Vec<Vec2>,
     background: GameColor,
     cells: [Cell; 18],
+    has_moved: bool,
+    before_grid: [u32; 16],
+    after_grid: [u32; 16],
+    moves: Vec<(usize, usize, u32)>,
+    additions: Vec<(usize, u32)>,
 }
 
 impl MainState {
@@ -54,8 +61,11 @@ impl MainState {
         ctx.gfx.add_font("ClearSans-Bold", font);
 
         let mut number: u32 = 0;
+        let game = Game::init_first_elements();
         let s = MainState {
-            game: Game::new(),
+            before_grid: game.copy_grid(),
+            after_grid: game.copy_grid(),
+            game,
             key: 0,
             locations: (0..4)
                 .flat_map(|i| {
@@ -68,15 +78,91 @@ impl MainState {
                 number += 1;
                 cell
             }),
+            has_moved: false,
+            moves: Vec::new(),
+            additions: Vec::new(),
         };
         Ok(s)
     }
+
+    fn update_moves(&mut self, directions: [[usize; 4]; 4]) {
+        for direction in directions {
+            let before = direction.map(|i| self.before_grid[i]);
+            let after = direction.map(|i| self.after_grid[i]);
+            self.moving(before, after, direction);
+        }
+    }
+
+    fn moving(&mut self, before: [u32; 4], after: [u32; 4], direction: [usize; 4]) {
+        let mut var_i: i8 = 3;
+        while var_i > -1 {
+            let i = var_i as usize;
+            if after[i] != 0 {
+                break;
+            } else if after[i] == before[i] {
+                var_i -= 1;
+                continue;
+            }
+            let reference = after[i];
+            let mut var_j = i.clone();
+            while var_j > -1 {
+                let j = var_j as usize;
+                let item = before[j];
+                let mut found = false;
+                if item == reference {
+                    self.moves.push((direction[j], direction[i], before[j]));
+                    break;
+                } else if item != 0 && item < reference {
+                    let mut k = 1;
+                    while k < j + 1 {
+                        if before[j - k] != 0 && before[j - k] != item {
+                            break;
+                        } else if before[j - k] == item {
+                            self.additions.push((direction[i], reference));
+                            if i != j {
+                                self.moves.push((direction[j], direction[i], item));
+                            }
+                            self.moves.push((direction[j - k], direction[i], item));
+                            let mut local_index = 0;
+                            let before = &before[..j - k].join([0; 4 - j + k]);
+                            found = true;
+                            break;
+                        }
+                        k += 1;
+                    }
+                }
+                if found {
+                    break;
+                }
+            }
+            var_j -= 1;
+        }
+        var_i -= 1;
+    }
+
+    //fn animation(&mut self, directions: [[usize; 4]; 4]) { }
 }
 
 impl event::EventHandler<ggez::GameError> for MainState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        if self.key != 0 {
-            self.game.action(self.key, true);
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        if !self.game.is_gameover() && self.has_moved {
+            self.game.random();
+            self.has_moved = false;
+        }
+        while ctx.time.check_update_time(8) {
+            if !self.game.is_gameover() {
+                if self.key != 0 {
+                    if self.game.partial_move(self.key) {
+                        self.before_grid = self.game.copy_grid();
+                        self.game.move_zero(&ORDERS[&self.key]);
+                        self.game.compare(&ORDERS[&(-self.key)]);
+                        self.game.move_zero(&ORDERS[&self.key]);
+                        self.after_grid = self.game.copy_grid();
+                        self.has_moved = true;
+                        self.key = 0;
+                    }
+                }
+            }
         }
         Ok(())
     }

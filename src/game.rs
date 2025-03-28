@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use rand;
 
 lazy_static! {
-    static ref ORDERS: HashMap<i8, [[usize; 4]; 4]> = {
+    pub static ref ORDERS: HashMap<i8, [[usize; 4]; 4]> = {
         HashMap::from(
             [
                 (1, [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]]),
@@ -33,16 +33,12 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
+    fn new() -> Game {
         Game {
             grid: from_fn(|_| 0),
             zero: (0..=15).collect(),
             score: 0,
         }
-    }
-
-    fn len(&self) -> usize {
-        self.grid.len()
     }
 
     fn restart(&mut self) {
@@ -51,26 +47,28 @@ impl Game {
         self.score = 0;
     }
 
-    fn set_first_elements(&mut self) {
+    pub fn init_first_elements() -> Game {
+        let mut game = Game::new();
         let a = rand::random_range(0..=15) as usize;
-        self.grid[a] = self.random_2_4();
+        game.grid[a] = game.random_2_4();
         let b = rand::random_range(0..=15) as usize;
-        self.grid[b] = self.random_2_4();
+        game.grid[b] = game.random_2_4();
         let c = rand::random_range(0..=15) as usize;
-        self.grid[c] = self.random_2_4();
+        game.grid[c] = game.random_2_4();
 
         if a != b {
-            self.zero.remove(b);
+            game.zero.remove(b);
         } else if a != c && b != c {
-            self.zero.remove(c);
+            game.zero.remove(c);
         }
+        game
     }
 
     fn random_2_4(&self) -> u32 {
         if rand::random::<f32>() < 0.8 { 2 } else { 4 }
     }
 
-    fn move_zero(&mut self, order: &[[usize; 4]; 4]) {
+    pub fn move_zero(&mut self, order: &[[usize; 4]; 4]) {
         for suborder in order {
             let mut index: i8 = 3;
             let mut end: i8 = 0;
@@ -110,7 +108,7 @@ impl Game {
         }
     }
 
-    fn compare(&mut self, order: &[[usize; 4]; 4]) {
+    pub fn compare(&mut self, order: &[[usize; 4]; 4]) {
         for suborder in order {
             for i in 0..3 {
                 let start = suborder[i];
@@ -126,25 +124,12 @@ impl Game {
         }
     }
 
-    fn random(&mut self) {
+    pub fn random(&mut self) {
         use rand::seq::IndexedRandom;
         let mut rng = rand::rng();
         let r = *(self.zero.choose(&mut rng).unwrap()) as usize;
         self.grid[r] = self.random_2_4();
         self.zero.remove(r);
-    }
-
-    pub fn action(&mut self, key: i8, rd: bool) -> bool {
-        if self.partial_move(key) {
-            self.move_zero(&ORDERS[&key]);
-            self.compare(&ORDERS[&(-key)]);
-            self.move_zero(&ORDERS[&key]);
-            if rd {
-                self.random();
-            }
-            return true;
-        }
-        false
     }
 
     fn r#move(&self) -> bool {
@@ -181,7 +166,7 @@ impl Game {
         return move |i| !suborder.contains(i) && (self.grid[*i] == self.grid[i + n] || self.grid[i + n] == 0)
     }
 
-    fn partial_move(&self, movement: i8) -> bool {
+    pub fn partial_move(&self, movement: i8) -> bool {
         let filled_cells: Vec<u32> = (0..=15).filter(|i| self.zero.contains(i)).collect();
         let mut condition = false;
         let mut j = 0;
@@ -194,5 +179,13 @@ impl Game {
             }
         }
         condition
+    }
+
+    pub fn is_gameover(&self) -> bool {
+        self.zero.len() == 0 && !self.r#move()
+    }
+
+    pub fn copy_grid(&self) -> [u32; 16] {
+        self.grid.clone()
     }
 }
