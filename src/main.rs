@@ -23,8 +23,9 @@ pub fn main() -> GameResult {
         .add_resource_path(resources_path)
         .window_mode(WindowMode::default().dimensions(500., 500.))
         .window_setup(
-            WindowSetup::default().title("2048"),
-            //.icon("/logo.png"),
+            WindowSetup::default()
+            .title("2048")
+            .icon("/logo.png"),
         );
 
     let (mut ctx, event_loop) = cb.build()?;
