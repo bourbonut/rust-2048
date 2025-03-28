@@ -95,6 +95,7 @@ impl MainState {
 
     fn moving(&mut self, before: [u32; 4], after: [u32; 4], direction: [usize; 4]) {
         let mut var_i: i8 = 3;
+        let mut before = before;
         while var_i > -1 {
             let i = var_i as usize;
             if after[i] != 0 {
@@ -104,16 +105,16 @@ impl MainState {
                 continue;
             }
             let reference = after[i];
-            let mut var_j = i.clone();
+            let mut var_j = var_i.clone();
             while var_j > -1 {
                 let j = var_j as usize;
                 let item = before[j];
-                let mut found = false;
                 if item == reference {
                     self.moves.push((direction[j], direction[i], before[j]));
                     break;
                 } else if item != 0 && item < reference {
                     let mut k = 1;
+                    let mut found = false;
                     while k < j + 1 {
                         if before[j - k] != 0 && before[j - k] != item {
                             break;
@@ -123,22 +124,28 @@ impl MainState {
                                 self.moves.push((direction[j], direction[i], item));
                             }
                             self.moves.push((direction[j - k], direction[i], item));
-                            let mut local_index = 0;
-                            let before = &before[..j - k].join([0; 4 - j + k]);
+                            let mut idx = 0;
+                            before = before.map(|x| {
+                                let r = if idx < j - k { x } else { 0 };
+                                idx += 1;
+                                r
+                            });
                             found = true;
                             break;
                         }
                         k += 1;
                     }
+                    if found {
+                        break;
+                    }
                 }
-                if found {
-                    break;
-                }
+                var_j -= 1;
             }
-            var_j -= 1;
+            var_i -= 1;
         }
-        var_i -= 1;
     }
+
+    //fn prepare_movements(&self) -> Vec<(Cell, (Vec))>
 
     //fn animation(&mut self, directions: [[usize; 4]; 4]) { }
 }
