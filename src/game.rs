@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 use lazy_static::lazy_static;
 use rand;
 
@@ -60,11 +60,13 @@ impl Game {
         game.grid[b] = game.random_2_4();
         let c = rand::random_range(0..=15) as usize;
         game.grid[c] = game.random_2_4();
+        game.remove_zero(a);
 
         if a != b {
-            game.zero.remove(b);
-        } else if a != c && b != c {
-            game.zero.remove(c);
+            game.remove_zero(b);
+        }
+        if a != c && b != c {
+            game.remove_zero(c);
         }
         game
     }
@@ -167,17 +169,17 @@ impl Game {
         condition
     }
 
-    fn condition<'a>(&'a self, suborder: &'a [usize; 4], n: usize) -> impl Fn(&usize) -> bool + 'a {
-        return move |i| !suborder.contains(i) && (self.grid[*i] == self.grid[i + n] || self.grid[i + n] == 0)
+    fn condition<'a>(&'a self, suborder: &'a [usize; 4], n: i8) -> impl Fn(&usize) -> bool + 'a {
+        return move |&i| !suborder.contains(&i) && (self.grid[i] == self.grid[(i as i8 + n) as usize] || self.grid[(i as i8 + n) as usize] == 0)
     }
 
     pub fn partial_move(&self, movement: i8) -> bool {
-        let filled_cells: Vec<u32> = (0..=15).filter(|i| !self.zero.contains(i)).collect();
+        let filled_cells: Vec<usize> = (0..16).filter(|&i| !self.zero.contains(&(i as u32))).collect();
         let mut condition = false;
         let mut j = 0;
         while j < filled_cells.len() && !condition {
             let i = filled_cells[j];
-            if self.condition(&VS[&movement], movement as usize)(&(i as usize)) {
+            if self.condition(&VS[&movement], movement)(&i) {
                 condition = true;
             } else {
                 j += 1;
@@ -400,6 +402,23 @@ mod test_game {
         expected_zero.retain(|&i| i != 8 && i != 12 && i != 13);
         expected_zero.sort();
         assert_eq!(game.zero, expected_zero);
+    }
+
+    #[test]
+    fn partial_move() {
+        // Move : Left
+        //
+        // Grid input
+        // [0, 0, 0, 0]
+        // [0, 0, 0, 8]
+        // [0, 0, 0, 0]
+        // [0, 0, 4, 2]
+
+        let mut game = Game::new();
+        game.grid = [0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 4, 2];
+        game.zero = vec![0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13];
+        let action = -1; // Left
+        assert!(game.partial_move(action));
     }
 
     #[test]

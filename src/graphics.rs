@@ -79,6 +79,11 @@ impl MainState {
 
         let mut number: u32 = 0;
         let game = Game::init_first_elements();
+
+        let mut zero = game.copy_zero();
+        let grid = game.copy_grid();
+        zero.sort();
+        println!("[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\nzero = {:?}", grid[0], grid[1], grid[2], grid[3], grid[4], grid[5], grid[6], grid[7], grid[8], grid[9], grid[10], grid[11], grid[12], grid[13], grid[14], grid[15], zero);
         let s = MainState {
             before_grid: game.copy_grid(),
             after_grid: game.copy_grid(),
@@ -193,7 +198,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
             let mut zero = self.game.copy_zero();
             let grid = self.game.copy_grid();
             zero.sort();
-            println!("[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\nzero = {:?}", grid[0], grid[1], grid[2], grid[3], grid[4], grid[5], grid[6], grid[7], grid[8], grid[9], grid[10], grid[11], grid[12], grid[13], grid[14], grid[15], zero)
+            println!("[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\nzero = {:?}", grid[0], grid[1], grid[2], grid[3], grid[4], grid[5], grid[6], grid[7], grid[8], grid[9], grid[10], grid[11], grid[12], grid[13], grid[14], grid[15], zero);
         }
         while ctx.time.check_update_time(FPS) {
             if !self.game.is_gameover() {
