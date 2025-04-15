@@ -195,10 +195,6 @@ impl Game {
     pub fn copy_grid(&self) -> [u32; 16] {
         self.grid.clone()
     }
-
-    pub fn copy_zero(&self) -> Vec<u32> {
-        self.zero.clone()
-    }
 }
 
 
