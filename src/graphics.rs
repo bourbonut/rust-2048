@@ -13,10 +13,10 @@ use crate::colors::{GameColor, BACKGROUND, SPRITES};
 use crate::game::{Game, ORDERS};
 
 // number of how many images will be drawn for an animation
-const NB_I: f32 = 40.;
+const NB_I: f32 = 8.;
 // number of how many homotheties will be applied for a number after an
 // addition
-const NB_H: u32 = 40;
+const NB_H: u32 = 8;
 
 const FPS: u32 = 240;
 
@@ -371,6 +371,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
             return Ok(());
         }
         if let Some(keycode) = input.keycode {
+            self.reset_animations();
             self.key = match keycode {
                 KeyCode::Up => -4,
                 KeyCode::Down => 4,
