@@ -59,6 +59,15 @@ impl Cell {
         );
         Ok(Cell { rect, text })
     }
+
+    fn draw(&self, canvas: &mut Canvas, ctx: &mut Context, location: Vec2) {
+        let [w, h] = self.text.dimensions(ctx).unwrap().center().into();
+        canvas.draw(&self.rect, location);
+        canvas.draw(
+            &self.text,
+            location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
+        );
+    }
 }
 
 
@@ -238,15 +247,7 @@ impl MainState {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
 
         for &location in self.locations.iter() {
-            let cell = &self.cells[0];
-            let rect = &cell.rect;
-            let text = &cell.text;
-            let [w, h] = text.dimensions(ctx).unwrap().center().into();
-            canvas.draw(rect, location);
-            canvas.draw(
-                text,
-                location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-            );
+            self.cells[0].draw(&mut canvas, ctx, location);
         }
 
         for movement in self.movements.iter() {
@@ -256,28 +257,12 @@ impl MainState {
                 let n = (number as f32).log2();
                 n as usize
             };
-            let cell = &self.cells[i];
-            let rect = &cell.rect;
-            let text = &cell.text;
-            let [w, h] = text.dimensions(ctx).unwrap().center().into();
-            canvas.draw(rect, location);
-            canvas.draw(
-                text,
-                location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-            );
+            self.cells[i].draw(&mut canvas, ctx, location);
         }
 
         for &(pos, number) in self.additions.iter() {
             let location = self.locations[pos];
-            let cell = &self.scales[&number][0];
-            let rect = &cell.rect;
-            let text = &cell.text;
-            let [w, h] = text.dimensions(ctx).unwrap().center().into();
-            canvas.draw(rect, location);
-            canvas.draw(
-                text,
-                location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-            );
+            self.scales[&number][0].draw(&mut canvas, ctx, location);
         }
 
         canvas.finish(ctx)?;
@@ -286,29 +271,13 @@ impl MainState {
 
     fn animate_additions(&self, ctx: &mut Context, i: u32) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
-        for location in self.locations.iter() {
-            let cell = &self.cells[0];
-            let rect = &cell.rect;
-            let text = &cell.text;
-            let [w, h] = text.dimensions(ctx).unwrap().center().into();
-            canvas.draw(rect, *location);
-            canvas.draw(
-                text,
-                *location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-            );
+        for &location in self.locations.iter() {
+            self.cells[0].draw(&mut canvas, ctx, location);
         }
 
         for &(pos, number) in self.additions.iter() {
             let location = self.locations[pos];
-            let cell = &self.scales[&number][i as usize];
-            let rect = &cell.rect;
-            let text = &cell.text;
-            let [w, h] = text.dimensions(ctx).unwrap().center().into();
-            canvas.draw(rect, location);
-            canvas.draw(
-                text,
-                location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-            );
+            self.scales[&number][i as usize].draw(&mut canvas, ctx, location);
         }
         canvas.finish(ctx)?;
         Ok(())
