@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::usize;
 
-use crate::colors::{GameColor, BACKGROUND, SPRITES};
+use crate::colors::{GameColor, BACKGROUND, SPRITES, as_color};
 use crate::game::{Game, ORDERS};
 
 // number of how many images will be drawn for an animation
@@ -329,6 +329,33 @@ impl MainState {
         canvas.finish(ctx)?;
         Ok(())
     }
+
+    fn draw_gameover(&self, ctx: &mut Context) -> GameResult<()> {
+        let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
+        let grid = self.game.copy_grid();
+        for (&location, number) in self.locations.iter().zip(grid) {
+            let i = if number == 0 {
+                0
+            } else {
+                let n = (number as f32).log2();
+                n as usize
+            };
+            self.cells[i].draw(&mut canvas, ctx, location);
+        }
+
+        let text = Text::new(
+            TextFragment::new("Game Over")
+                .font("ClearSans-Bold")
+                .color(as_color([255, 0, 0]))
+                .scale(PxScale::from(78.)),
+        );
+
+        let [w, h] = text.dimensions(ctx).unwrap().center().into();
+        canvas.draw(&text, Vec2::new(250. - w, 250. - h));
+        canvas.finish(ctx)?;
+
+        Ok(())
+    }
 }
 
 impl event::EventHandler<ggez::GameError> for MainState {
@@ -366,6 +393,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
         } else if self.counter_2 <= NB_I as u32 {
             self.animate_additions(ctx, self.counter_2)?;
             self.counter_2 += 1;
+        } else if self.game.is_gameover() {
+            self.reset_animations();
+            self.draw_gameover(ctx)?;
         } else {
             self.reset_animations();
             let mut canvas = Canvas::from_frame(ctx, self.background.rgb);

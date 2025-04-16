@@ -23,7 +23,7 @@ pub const SPRITES: [([u8; 3], u32, [u8; 3]); 18] = [
     ([59, 58, 53], 26, [255, 255, 255]),    // 131072
 ];
 
-fn as_color(rgb: [u8; 3]) -> Color {
+pub fn as_color(rgb: [u8; 3]) -> Color {
     let [r, g, b] = rgb;
     Color::from_rgb(r, g, b)
 }
