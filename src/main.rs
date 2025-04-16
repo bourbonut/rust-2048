@@ -1,12 +1,12 @@
 mod colors;
-mod graphics;
 mod game;
+mod graphics;
 
-use graphics::MainState;
 use ggez::conf::WindowMode;
 use ggez::conf::WindowSetup;
 use ggez::event;
 use ggez::GameResult;
+use graphics::MainState;
 use std::env::current_dir;
 use std::path::PathBuf;
 
@@ -22,11 +22,7 @@ pub fn main() -> GameResult {
     let cb = ggez::ContextBuilder::new("game2048", "bourbonut")
         .add_resource_path(resources_path)
         .window_mode(WindowMode::default().dimensions(500., 500.))
-        .window_setup(
-            WindowSetup::default()
-            .title("2048")
-            .icon("/logo.png"),
-        );
+        .window_setup(WindowSetup::default().title("2048").icon("/logo.png"));
 
     let (mut ctx, event_loop) = cb.build()?;
     let state = MainState::new(&mut ctx)?;

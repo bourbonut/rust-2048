@@ -1,17 +1,27 @@
-use std::{collections::HashMap, usize};
 use lazy_static::lazy_static;
 use rand;
+use std::{collections::HashMap, usize};
 
 lazy_static! {
     pub static ref ORDERS: HashMap<i8, [[usize; 4]; 4]> = {
-        HashMap::from(
-            [
-                (1, [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]]),
-                (-1, [[3, 2, 1, 0], [7, 6, 5, 4], [11, 10, 9, 8], [15, 14, 13, 12]]),
-                (4, [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]]),
-                (-4, [[12, 8, 4, 0], [13, 9, 5, 1], [14, 10, 6, 2], [15, 11, 7, 3]]),
-            ]
-        )
+        HashMap::from([
+            (
+                1,
+                [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]],
+            ),
+            (
+                -1,
+                [[3, 2, 1, 0], [7, 6, 5, 4], [11, 10, 9, 8], [15, 14, 13, 12]],
+            ),
+            (
+                4,
+                [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]],
+            ),
+            (
+                -4,
+                [[12, 8, 4, 0], [13, 9, 5, 1], [14, 10, 6, 2], [15, 11, 7, 3]],
+            ),
+        ])
     };
 }
 
@@ -72,7 +82,11 @@ impl Game {
     }
 
     fn random_2_4(&self) -> u32 {
-        if rand::random::<f32>() < 0.8 { 2 } else { 4 }
+        if rand::random::<f32>() < 0.8 {
+            2
+        } else {
+            4
+        }
     }
 
     pub fn move_zero(&mut self, order: &[[usize; 4]; 4]) {
@@ -170,11 +184,17 @@ impl Game {
     }
 
     fn condition<'a>(&'a self, suborder: &'a [usize; 4], n: i8) -> impl Fn(&usize) -> bool + 'a {
-        return move |&i| !suborder.contains(&i) && (self.grid[i] == self.grid[(i as i8 + n) as usize] || self.grid[(i as i8 + n) as usize] == 0)
+        return move |&i| {
+            !suborder.contains(&i)
+                && (self.grid[i] == self.grid[(i as i8 + n) as usize]
+                    || self.grid[(i as i8 + n) as usize] == 0)
+        };
     }
 
     pub fn partial_move(&self, movement: i8) -> bool {
-        let filled_cells: Vec<usize> = (0..16).filter(|&i| !self.zero.contains(&(i as u32))).collect();
+        let filled_cells: Vec<usize> = (0..16)
+            .filter(|&i| !self.zero.contains(&(i as u32)))
+            .collect();
         let mut condition = false;
         let mut j = 0;
         while j < filled_cells.len() && !condition {
@@ -196,7 +216,6 @@ impl Game {
         self.grid.clone()
     }
 }
-
 
 #[cfg(test)]
 mod test_game {
@@ -312,7 +331,10 @@ mod test_game {
             }
         }
         game.zero.sort();
-        assert_eq!(game.zero, (0..16).filter(|i| i % 4 != 0).collect::<Vec<u32>>());
+        assert_eq!(
+            game.zero,
+            (0..16).filter(|i| i % 4 != 0).collect::<Vec<u32>>()
+        );
     }
 
     #[test]
@@ -351,11 +373,14 @@ mod test_game {
             }
         }
         game.zero.sort();
-        assert_eq!(game.zero, (0..16).filter(|i| i % 4 != 3).collect::<Vec<u32>>());
+        assert_eq!(
+            game.zero,
+            (0..16).filter(|i| i % 4 != 3).collect::<Vec<u32>>()
+        );
     }
 
     #[test]
-    fn simple_move(){
+    fn simple_move() {
         // Move : Left
         //
         // Grid input
@@ -366,7 +391,7 @@ mod test_game {
         // [0, 0, 4, 8]
         //
         // Expected output
-        // 
+        //
         // [0, 0, 0, 0]
         // [0, 0, 0, 0]
         // [4, 0, 0, 0]

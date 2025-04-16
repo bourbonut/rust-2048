@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::usize;
 use ggez::event;
 use ggez::glam::*;
 use ggez::graphics::{
@@ -8,6 +5,9 @@ use ggez::graphics::{
 };
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::usize;
 
 use crate::colors::{GameColor, BACKGROUND, SPRITES};
 use crate::game::{Game, ORDERS};
@@ -69,7 +69,6 @@ impl Cell {
         );
     }
 }
-
 
 pub struct MainState {
     game: Game,
@@ -136,17 +135,25 @@ impl MainState {
     }
 
     fn update_static_locations(&mut self) {
-        self.static_locs = self.before_grid.iter().zip(self.after_grid.iter()).enumerate().filter_map(
-            |(loc_i, (&before, &after))| {
+        self.static_locs = self
+            .before_grid
+            .iter()
+            .zip(self.after_grid.iter())
+            .enumerate()
+            .filter_map(|(loc_i, (&before, &after))| {
                 if before == after && before != 0 {
-                    let i = if before == 0 { 0 } else {
+                    let i = if before == 0 {
+                        0
+                    } else {
                         let n = (before as f32).log2();
                         n as usize
                     };
                     Some((i, loc_i))
-                } else { None }
-            }
-        ).collect();
+                } else {
+                    None
+                }
+            })
+            .collect();
     }
 
     fn update_moves(&mut self, directions: [[usize; 4]; 4]) {
@@ -210,8 +217,9 @@ impl MainState {
     }
 
     fn prepare_movements(&self) -> Vec<Movement> {
-       self.moves.iter().map(
-            |&(start, end, number)| {
+        self.moves
+            .iter()
+            .map(|&(start, end, number)| {
                 let symbol: i8 = if end > start { 1 } else { -1 };
                 let start = self.locations[start];
                 let end = self.locations[end];
@@ -219,9 +227,16 @@ impl MainState {
                 let q = Vec2::new(diff[0] / NB_I, diff[1] / NB_I);
                 let r = Vec2::new(diff[0] % NB_I, diff[1] / NB_I) / NB_I;
                 let limits = Vec2::new(107., 107.) + 2. * symbol as f32 * q;
-                Movement { number: number as usize, start, limits, q, r, symbol }
-            }
-        ).collect()
+                Movement {
+                    number: number as usize,
+                    start,
+                    limits,
+                    q,
+                    r,
+                    symbol,
+                }
+            })
+            .collect()
     }
 
     fn prepare_scales(&self, ctx: &mut Context) -> HashMap<u32, Vec<Cell>> {
@@ -230,7 +245,9 @@ impl MainState {
             if scales.contains_key(&number) {
                 continue;
             }
-            let i = if number == 0 { 0 } else {
+            let i = if number == 0 {
+                0
+            } else {
                 let n = (number as f32).log2();
                 n as usize
             };
@@ -275,7 +292,9 @@ impl MainState {
         for movement in self.movements.iter() {
             let location = movement.start + (i as f32) * (movement.q + movement.r);
             let number = movement.number;
-            let i = if number == 0 { 0 } else {
+            let i = if number == 0 {
+                0
+            } else {
                 let n = (number as f32).log2();
                 n as usize
             };
@@ -294,7 +313,9 @@ impl MainState {
     fn animate_additions(&self, ctx: &mut Context, i: u32) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
         for (loc_idx, &number) in self.after_grid.iter().enumerate() {
-            let i = if number == 0 { 0 } else {
+            let i = if number == 0 {
+                0
+            } else {
                 let n = (number as f32).log2();
                 n as usize
             };
@@ -350,7 +371,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
             let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
             let grid = self.game.copy_grid();
             for (&location, number) in self.locations.iter().zip(grid) {
-                let i = if number == 0 { 0 } else {
+                let i = if number == 0 {
+                    0
+                } else {
                     let n = (number as f32).log2();
                     n as usize
                 };
@@ -362,11 +385,11 @@ impl event::EventHandler<ggez::GameError> for MainState {
     }
 
     fn key_down_event(
-            &mut self,
-            _ctx: &mut Context,
-            input: ggez::input::keyboard::KeyInput,
-            _repeated: bool,
-        ) -> Result<(), ggez::GameError> {
+        &mut self,
+        _ctx: &mut Context,
+        input: ggez::input::keyboard::KeyInput,
+        _repeated: bool,
+    ) -> Result<(), ggez::GameError> {
         if self.counter_1 <= NB_I as u32 || self.counter_2 <= NB_I as u32 {
             return Ok(());
         }
