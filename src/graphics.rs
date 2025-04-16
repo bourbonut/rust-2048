@@ -82,6 +82,7 @@ pub struct MainState {
     has_moved: bool,
     before_grid: [u32; 16],
     after_grid: [u32; 16],
+    static_locs: Vec<(usize, usize)>,
     moves: Vec<(usize, usize, u32)>,
     additions: Vec<(usize, u32)>,
     direction: Option<[[usize; 4]; 4]>,
@@ -121,6 +122,7 @@ impl MainState {
             direction: None,
             movements: Vec::new(),
             scales: HashMap::new(),
+            static_locs: Vec::new(),
         };
         Ok(s)
     }
@@ -130,6 +132,21 @@ impl MainState {
         self.additions.clear();
         self.movements.clear();
         self.scales.clear();
+        self.static_locs.clear();
+    }
+
+    fn update_static_locations(&mut self) {
+        self.static_locs = self.before_grid.iter().zip(self.after_grid.iter()).enumerate().filter_map(
+            |(loc_i, (&before, &after))| {
+                if before == after && before != 0 {
+                    let i = if before == 0 { 0 } else {
+                        let n = (before as f32).log2();
+                        n as usize
+                    };
+                    Some((i, loc_i))
+                } else { None }
+            }
+        ).collect();
     }
 
     fn update_moves(&mut self, directions: [[usize; 4]; 4]) {
@@ -236,6 +253,7 @@ impl MainState {
     }
 
     fn prepare_animations(&mut self, ctx: &mut Context, directions: [[usize; 4]; 4]) {
+        self.update_static_locations();
         self.update_moves(directions);
         self.movements = self.prepare_movements();
         self.scales = self.prepare_scales(ctx);
@@ -248,6 +266,10 @@ impl MainState {
 
         for &location in self.locations.iter() {
             self.cells[0].draw(&mut canvas, ctx, location);
+        }
+
+        for &(nb_idx, loc_idx) in self.static_locs.iter() {
+            self.cells[nb_idx].draw(&mut canvas, ctx, self.locations[loc_idx]);
         }
 
         for movement in self.movements.iter() {
@@ -271,8 +293,12 @@ impl MainState {
 
     fn animate_additions(&self, ctx: &mut Context, i: u32) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
-        for &location in self.locations.iter() {
-            self.cells[0].draw(&mut canvas, ctx, location);
+        for (loc_idx, &number) in self.after_grid.iter().enumerate() {
+            let i = if number == 0 { 0 } else {
+                let n = (number as f32).log2();
+                n as usize
+            };
+            self.cells[i].draw(&mut canvas, ctx, self.locations[loc_idx]);
         }
 
         for &(pos, number) in self.additions.iter() {
