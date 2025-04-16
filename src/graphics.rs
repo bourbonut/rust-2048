@@ -194,27 +194,27 @@ impl MainState {
 
     fn prepare_movements(&self) -> Vec<Movement> {
        self.moves.iter().map(
-            |(start, end, number)| {
+            |&(start, end, number)| {
                 let symbol: i8 = if end > start { 1 } else { -1 };
-                let start = self.locations[*start];
-                let end = self.locations[*end];
+                let start = self.locations[start];
+                let end = self.locations[end];
                 let diff = end - start;
                 let q = Vec2::new(diff[0] / NB_I, diff[1] / NB_I);
                 let r = Vec2::new(diff[0] % NB_I, diff[1] / NB_I) / NB_I;
                 let limits = Vec2::new(107., 107.) + 2. * symbol as f32 * q;
-                Movement { number: *number as usize, start, limits, q, r, symbol }
+                Movement { number: number as usize, start, limits, q, r, symbol }
             }
         ).collect()
     }
 
     fn prepare_scales(&self, ctx: &mut Context) -> HashMap<u32, Vec<Cell>> {
         let mut scales = HashMap::new();
-        for (_, number) in self.additions.iter() {
-            if scales.contains_key(number) {
+        for &(_, number) in self.additions.iter() {
+            if scales.contains_key(&number) {
                 continue;
             }
-            let i = if *number == 0 { 0 } else {
-                let n = (*number as f32).log2();
+            let i = if number == 0 { 0 } else {
+                let n = (number as f32).log2();
                 n as usize
             };
             let mut sprite = SPRITES[i].clone();
@@ -227,10 +227,10 @@ impl MainState {
             for s in 0..=NB_H {
                 sprite.1 = s * q + s * r;
                 let game_color = GameColor::new(sprite);
-                images.push(Cell::new(ctx, *number, game_color).unwrap());
+                images.push(Cell::new(ctx, i as u32, game_color).unwrap());
             }
 
-            scales.insert(*number, images);
+            scales.insert(number, images);
         }
         scales
     }
