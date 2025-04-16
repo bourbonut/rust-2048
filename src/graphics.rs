@@ -349,20 +349,12 @@ impl event::EventHandler<ggez::GameError> for MainState {
             self.reset_animations();
             let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
             let grid = self.game.copy_grid();
-            for (location, number) in self.locations.iter().zip(grid) {
+            for (&location, number) in self.locations.iter().zip(grid) {
                 let i = if number == 0 { 0 } else {
                     let n = (number as f32).log2();
                     n as usize
                 };
-                let cell = &self.cells[i];
-                let rect = &cell.rect;
-                let text = &cell.text;
-                let [w, h] = text.dimensions(ctx).unwrap().center().into();
-                canvas.draw(rect, *location);
-                canvas.draw(
-                    text,
-                    *location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-                );
+                self.cells[i].draw(&mut canvas, ctx, location);
             }
             canvas.finish(ctx)?;
         }
