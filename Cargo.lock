@@ -2047,7 +2047,6 @@ name = "rust-2048"
 version = "0.1.0"
 dependencies = [
  "ggez",
- "lazy_static",
  "rand 0.9.0",
 ]
 

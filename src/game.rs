@@ -1,6 +1,4 @@
-use lazy_static::lazy_static;
 use rand;
-use std::collections::HashMap;
 
 const ORDERS: [[[usize; 4]; 4]; 4] = [
     [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]],
@@ -9,16 +7,12 @@ const ORDERS: [[[usize; 4]; 4]; 4] = [
     [[12, 8, 4, 0], [13, 9, 5, 1], [14, 10, 6, 2], [15, 11, 7, 3]],
 ];
 
-lazy_static! {
-    static ref VS: HashMap<i8, [usize; 4]> = {
-        HashMap::from([
-            (-4, [0, 1, 2, 3]),
-            (4, [12, 13, 14, 15]),
-            (-1, [0, 4, 8, 12]),
-            (1, [3, 7, 11, 15]),
-        ])
-    };
-}
+const MOVEMENTS: [[usize; 4]; 4] = [
+    [0, 1, 2, 3],
+    [12, 13, 14, 15],
+    [0, 4, 8, 12],
+    [3, 7, 11, 15],
+];
 
 struct OrderIndex(i8);
 
@@ -36,6 +30,21 @@ impl OrderIndex {
             unknown => panic!("Index {unknown} not found in ORDERS")
         };
         ORDERS[i]
+    }
+}
+
+struct MovementIndex(i8);
+
+impl MovementIndex {
+    fn value(&self) -> [usize; 4] {
+        let i = match self.0 {
+            -4 => 0,
+            4 => 1,
+            -1 => 2,
+            1 => 3,
+            unknown => panic!("Index {unknown} not found in MOVEMENTS")
+        };
+        MOVEMENTS[i]
     }
 }
 
@@ -195,6 +204,7 @@ impl Game {
     }
 
     pub fn partial_move(&self, movement: i8) -> bool {
+        let movement_index = MovementIndex(movement);
         let filled_cells: Vec<usize> = (0..16)
             .filter(|&i| !self.zero.contains(&(i as u32)))
             .collect();
@@ -202,7 +212,7 @@ impl Game {
         let mut j = 0;
         while j < filled_cells.len() && !condition {
             let i = filled_cells[j];
-            if self.condition(&VS[&movement], movement)(&i) {
+            if self.condition(&movement_index.value(), movement)(&i) {
                 condition = true;
             } else {
                 j += 1;
