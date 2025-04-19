@@ -28,6 +28,6 @@ pub fn main() -> GameResult {
     let (mut ctx, event_loop) = cb.build()?;
     let font = FontData::from_path(&ctx.fs, PathBuf::from("/clear-sans.bold.ttf"))?;
     ctx.gfx.add_font("ClearSans-Bold", font);
-    let state = MainState::new(&mut ctx)?;
+    let state = MainState::new();
     event::run(ctx, event_loop, state)
 }

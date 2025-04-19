@@ -5,17 +5,16 @@ use ggez::graphics::{
 };
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
-use std::collections::HashMap;
 use std::usize;
 
-use crate::colors::{GameColor, BACKGROUND, SPRITES, as_color};
+use crate::colors::{GameColors, GameColor, BACKGROUND, as_color};
 use crate::game::{Game, ORDERS};
 
 // number of how many images will be drawn for an animation
 const NB_I: f32 = 8.;
 // number of how many homotheties will be applied for a number after an
 // addition
-const NB_H: u32 = 8;
+const NB_H: f32 = 8.;
 
 const FPS: u32 = 240;
 
@@ -27,52 +26,33 @@ pub struct Movement {
     r: Vec2,
 }
 
-#[derive(Debug)]
-struct GameCell {
-    rect: Mesh,
-    text: Text,
-}
-
-impl GameCell {
-    fn new(ctx: &mut Context, index: u32, game_color: GameColor) -> GameResult<Self> {
-        let number = if index != 0 {
-            2_i64.pow(index)
-        } else {
-            0_i64
-        };
-        let rect = Mesh::new_rounded_rectangle(
-            ctx,
-            DrawMode::fill(),
-            Rect::new(0., 0., 105., 105.),
-            5.,
-            game_color.rgb,
-        )?;
-        let text = Text::new(
-            TextFragment::new(format!("{}", number))
-                .font("ClearSans-Bold")
-                .color(game_color.font_color)
-                .scale(PxScale::from(game_color.size as f32)),
-        );
-        Ok(GameCell { rect, text })
-    }
-
-    fn draw(&self, canvas: &mut Canvas, ctx: &mut Context, location: Vec2) {
-        let [w, h] = self.text.dimensions(ctx).unwrap().center().into();
-        canvas.draw(&self.rect, location);
-        canvas.draw(
-            &self.text,
-            location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
-        );
-    }
-}
-
-fn number_to_index(number: u32) -> usize {
-    if number == 0 {
-        0
-    } else {
-        let n = (number as f32).log2();
-        n as usize
-    }
+fn draw_cell(
+    canvas: &mut Canvas,
+    ctx: &mut Context,
+    number: u32,
+    game_color: &GameColor,
+    location: Vec2
+) -> GameResult<()> {
+    let rect = Mesh::new_rounded_rectangle(
+        ctx,
+        DrawMode::fill(),
+        Rect::new(0., 0., 105., 105.),
+        5.,
+        game_color.rgb,
+    )?;
+    let text = Text::new(
+        TextFragment::new(format!("{}", number))
+            .font("ClearSans-Bold")
+            .color(game_color.font_color)
+            .scale(PxScale::from(game_color.size as f32)),
+    );
+    let [w, h] = text.dimensions(ctx).unwrap().center().into();
+    canvas.draw(&rect, location);
+    canvas.draw(
+        &text,
+        location + Vec2::new((53 - w as i32 - 2) as f32, (53 - h as i32 - 5) as f32),
+    );
+    Ok(())
 }
 
 pub struct MainState {
@@ -82,24 +62,22 @@ pub struct MainState {
     counter_2: u32,
     locations: Vec<Vec2>,
     background: GameColor,
-    cells: [GameCell; 18],
+    game_colors: GameColors,
     has_moved: bool,
     before_grid: [u32; 16],
     after_grid: [u32; 16],
-    static_locs: Vec<(usize, usize)>,
+    static_locs: Vec<(usize, u32)>,
     moves: Vec<(usize, usize, u32)>,
     additions: Vec<(usize, u32)>,
     direction: Option<[[usize; 4]; 4]>,
     movements: Vec<Movement>,
-    scales: HashMap<u32, Vec<GameCell>>,
 }
 
 impl MainState {
-    pub fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let mut number: u32 = 0;
+    pub fn new() -> Self {
         let game = Game::init_first_elements();
 
-        let s = MainState {
+        Self {
             before_grid: game.copy_grid(),
             after_grid: game.copy_grid(),
             game,
@@ -111,28 +89,21 @@ impl MainState {
                     (0..4).map(move |j| Vec2::new((15 + 121 * j) as f32, (15 + 121 * i) as f32))
                 })
                 .collect(),
-            background: GameColor::new(BACKGROUND),
-            cells: SPRITES.map(|sprite| {
-                let cell = GameCell::new(ctx, number, GameColor::new(sprite)).unwrap();
-                number += 1;
-                cell
-            }),
+            background: GameColor::from(BACKGROUND),
+            game_colors: GameColors::new(),
             has_moved: false,
             moves: Vec::new(),
             additions: Vec::new(),
             direction: None,
             movements: Vec::new(),
-            scales: HashMap::new(),
             static_locs: Vec::new(),
-        };
-        Ok(s)
+        }
     }
 
     fn reset_animations(&mut self) {
         self.moves.clear();
         self.additions.clear();
         self.movements.clear();
-        self.scales.clear();
         self.static_locs.clear();
     }
 
@@ -144,13 +115,7 @@ impl MainState {
             .enumerate()
             .filter_map(|(loc_i, (&before, &after))| {
                 if before == after && before != 0 {
-                    let i = if before == 0 {
-                        0
-                    } else {
-                        let n = (before as f32).log2();
-                        n as usize
-                    };
-                    Some((i, loc_i))
+                    Some((loc_i, before))
                 } else {
                     None
                 }
@@ -237,36 +202,10 @@ impl MainState {
             .collect()
     }
 
-    fn prepare_scales(&self, ctx: &mut Context) -> HashMap<u32, Vec<GameCell>> {
-        let mut scales = HashMap::new();
-        for &(_, number) in self.additions.iter() {
-            if scales.contains_key(&number) {
-                continue;
-            }
-            let i = number_to_index(number);
-            let mut sprite = SPRITES[i].clone();
-            let size = sprite.1;
-
-            let q = size / NB_H;
-            let r = (size % NB_H) / NB_H;
-
-            let mut images = Vec::new();
-            for s in 0..=NB_H {
-                sprite.1 = s * q + s * r;
-                let game_color = GameColor::new(sprite);
-                images.push(GameCell::new(ctx, i as u32, game_color).unwrap());
-            }
-
-            scales.insert(number, images);
-        }
-        scales
-    }
-
-    fn prepare_animations(&mut self, ctx: &mut Context, directions: [[usize; 4]; 4]) {
+    fn prepare_animations(&mut self, directions: [[usize; 4]; 4]) {
         self.update_static_locations();
         self.update_moves(directions);
         self.movements = self.prepare_movements();
-        self.scales = self.prepare_scales(ctx);
         self.counter_1 = 0;
         self.counter_2 = 0;
     }
@@ -275,23 +214,27 @@ impl MainState {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
 
         for &location in self.locations.iter() {
-            self.cells[0].draw(&mut canvas, ctx, location);
+            let game_color = &self.game_colors[&0];
+            draw_cell(&mut canvas, ctx, 0, game_color, location)?;
         }
 
-        for &(nb_idx, loc_idx) in self.static_locs.iter() {
-            self.cells[nb_idx].draw(&mut canvas, ctx, self.locations[loc_idx]);
+        for &(pos, number) in self.static_locs.iter() {
+            let location = self.locations[pos];
+            let game_color = &self.game_colors[&number];
+            draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
 
         for movement in self.movements.iter() {
             let location = movement.start + (i as f32) * (movement.q + movement.r);
-            let number = movement.number;
-            let i = number_to_index(number as u32);
-            self.cells[i].draw(&mut canvas, ctx, location);
+            let number = movement.number as u32;
+            let game_color = &self.game_colors[&number];
+            draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
 
         for &(pos, number) in self.additions.iter() {
             let location = self.locations[pos];
-            self.scales[&number][0].draw(&mut canvas, ctx, location);
+            let game_color = &self.game_colors[&number].scale(0., NB_H);
+            draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
 
         canvas.finish(ctx)?;
@@ -300,14 +243,16 @@ impl MainState {
 
     fn animate_additions(&self, ctx: &mut Context, i: u32) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
-        for (loc_idx, &number) in self.after_grid.iter().enumerate() {
-            let i = number_to_index(number);
-            self.cells[i].draw(&mut canvas, ctx, self.locations[loc_idx]);
+        for (pos, &number) in self.after_grid.iter().enumerate() {
+            let location = self.locations[pos];
+            let game_color = &self.game_colors[&number];
+            draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
 
         for &(pos, number) in self.additions.iter() {
             let location = self.locations[pos];
-            self.scales[&number][i as usize].draw(&mut canvas, ctx, location);
+            let game_color = &self.game_colors[&number].scale(i as f32, NB_H);
+            draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
         canvas.finish(ctx)?;
         Ok(())
@@ -317,8 +262,8 @@ impl MainState {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
         let grid = self.game.copy_grid();
         for (&location, number) in self.locations.iter().zip(grid) {
-            let i = number_to_index(number);
-            self.cells[i].draw(&mut canvas, ctx, location);
+            let game_color = &self.game_colors[&number];
+            draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
 
         let text = Text::new(
@@ -363,7 +308,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         if let Some(directions) = self.direction {
-            self.prepare_animations(ctx, directions);
+            self.prepare_animations(directions);
             self.direction = None;
         } else if self.counter_1 <= NB_I as u32 {
             self.animate_movements(ctx, self.counter_1)?;
@@ -379,13 +324,8 @@ impl event::EventHandler<ggez::GameError> for MainState {
             let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
             let grid = self.game.copy_grid();
             for (&location, number) in self.locations.iter().zip(grid) {
-                let i = if number == 0 {
-                    0
-                } else {
-                    let n = (number as f32).log2();
-                    n as usize
-                };
-                self.cells[i].draw(&mut canvas, ctx, location);
+                let game_color = &self.game_colors[&number];
+                draw_cell(&mut canvas, ctx, number, game_color, location)?;
             }
             canvas.finish(ctx)?;
         }
