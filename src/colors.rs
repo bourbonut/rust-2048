@@ -1,8 +1,10 @@
+use std::ops::Index;
+
 use ggez::graphics::Color;
 
 pub const BACKGROUND: ([u8; 3], u32, [u8; 3]) = ([183, 173, 160], 0, [119, 110, 101]);
 // background color, size, font color
-pub const SPRITES: [([u8; 3], u32, [u8; 3]); 18] = [
+pub const GAMEDATA: [([u8; 3], u32, [u8; 3]); 18] = [
     ([205, 193, 180], 0, [119, 110, 101]),  // 0
     ([238, 228, 218], 56, [119, 110, 101]), // 2
     ([237, 224, 200], 56, [119, 110, 101]), // 4
@@ -28,6 +30,7 @@ pub fn as_color(rgb: [u8; 3]) -> Color {
     Color::from_rgb(r, g, b)
 }
 
+
 #[derive(Debug)]
 pub struct GameColor {
     pub rgb: Color,
@@ -35,13 +38,46 @@ pub struct GameColor {
     pub font_color: Color,
 }
 
-impl GameColor {
-    pub fn new(game_color: ([u8; 3], u32, [u8; 3])) -> Self {
-        let (rgb, size, font_color) = game_color;
+impl From<([u8; 3], u32, [u8; 3])> for GameColor {
+    fn from(item: ([u8; 3], u32, [u8; 3])) -> Self {
         Self {
-            rgb: as_color(rgb),
-            size: 1.3 * size as f32,
-            font_color: as_color(font_color),
+            rgb: as_color(item.0),
+            size: 1.3 * item.1 as f32,
+            font_color: as_color(item.2),
         }
+    }
+}
+
+impl GameColor {
+    pub fn scale(&self, factor: f32, base: f32) -> GameColor {
+        let q = self.size.div_euclid(base);
+        let r = self.size.rem_euclid(base) / base;
+        Self {
+            rgb: self.rgb,
+            size: factor * (q + r),
+            font_color: self.font_color,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct GameColors([GameColor; 18]);
+
+impl GameColors {
+    pub fn new() -> Self {
+        Self(GAMEDATA.map(|game_data| GameColor::from(game_data)))
+    }
+}
+
+impl Index<&u32> for GameColors {
+    type Output = GameColor;
+    fn index(&self, number: &u32) -> &Self::Output {
+        let index = if *number == 0 {
+            0
+        } else {
+            let n = (*number as f32).log2();
+            n as usize
+        };
+        &self.0[index]
     }
 }
