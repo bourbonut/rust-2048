@@ -4,6 +4,7 @@ mod graphics;
 
 use ggez::conf::WindowMode;
 use ggez::conf::WindowSetup;
+use ggez::graphics::FontData;
 use ggez::event;
 use ggez::GameResult;
 use graphics::MainState;
@@ -25,6 +26,8 @@ pub fn main() -> GameResult {
         .window_setup(WindowSetup::default().title("2048").icon("/logo.png"));
 
     let (mut ctx, event_loop) = cb.build()?;
+    let font = FontData::from_path(&ctx.fs, PathBuf::from("/clear-sans.bold.ttf"))?;
+    ctx.gfx.add_font("ClearSans-Bold", font);
     let state = MainState::new(&mut ctx)?;
     event::run(ctx, event_loop, state)
 }
