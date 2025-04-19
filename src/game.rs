@@ -1,29 +1,13 @@
 use lazy_static::lazy_static;
 use rand;
-use std::{collections::HashMap, usize};
+use std::collections::HashMap;
 
-lazy_static! {
-    pub static ref ORDERS: HashMap<i8, [[usize; 4]; 4]> = {
-        HashMap::from([
-            (
-                1,
-                [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]],
-            ),
-            (
-                -1,
-                [[3, 2, 1, 0], [7, 6, 5, 4], [11, 10, 9, 8], [15, 14, 13, 12]],
-            ),
-            (
-                4,
-                [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]],
-            ),
-            (
-                -4,
-                [[12, 8, 4, 0], [13, 9, 5, 1], [14, 10, 6, 2], [15, 11, 7, 3]],
-            ),
-        ])
-    };
-}
+const ORDERS: [[[usize; 4]; 4]; 4] = [
+    [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]],
+    [[3, 2, 1, 0], [7, 6, 5, 4], [11, 10, 9, 8], [15, 14, 13, 12]],
+    [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]],
+    [[12, 8, 4, 0], [13, 9, 5, 1], [14, 10, 6, 2], [15, 11, 7, 3]],
+];
 
 lazy_static! {
     static ref VS: HashMap<i8, [usize; 4]> = {
@@ -34,6 +18,25 @@ lazy_static! {
             (1, [3, 7, 11, 15]),
         ])
     };
+}
+
+struct OrderIndex(i8);
+
+impl OrderIndex {
+    fn neg(&self) -> Self {
+        OrderIndex(-self.0)
+    }
+
+    fn value(&self) -> [[usize; 4]; 4] {
+        let i = match self.0 {
+            1 => 0,
+            -1 => 1,
+            4 => 2,
+            -4 => 3,
+            unknown => panic!("Index {unknown} not found in ORDERS")
+        };
+        ORDERS[i]
+    }
 }
 
 pub struct Game {
@@ -208,12 +211,23 @@ impl Game {
         condition
     }
 
+    pub fn action(&mut self, action: i8) {
+        let order_index = OrderIndex(action);
+        self.move_zero(&order_index.value());
+        self.compare(&order_index.neg().value());
+        self.move_zero(&order_index.value());
+    }
+
     pub fn is_gameover(&self) -> bool {
         self.zero.len() == 0 && !self.r#move()
     }
 
     pub fn copy_grid(&self) -> [u32; 16] {
         self.grid.clone()
+    }
+
+    pub fn direction(&self, action: i8) -> [[usize; 4]; 4] {
+        OrderIndex(action).value()
     }
 }
 
@@ -245,9 +259,7 @@ mod test_game {
             game.remove_zero(i + 12);
         }
         let action = -4; // Up
-        game.move_zero(&ORDERS[&action]);
-        game.compare(&ORDERS[&(-action)]);
-        game.move_zero(&ORDERS[&action]);
+        game.action(action);
         for i in 0..4 {
             assert_eq!(game.grid[i], 4);
         }
@@ -282,9 +294,7 @@ mod test_game {
             game.remove_zero(i + 12);
         }
         let action = 4; // Down
-        game.move_zero(&ORDERS[&action]);
-        game.compare(&ORDERS[&(-action)]);
-        game.move_zero(&ORDERS[&action]);
+        game.action(action);
         for i in 0..12 {
             assert_eq!(game.grid[i], 0);
         }
@@ -319,9 +329,7 @@ mod test_game {
             game.remove_zero(4 * i + 3);
         }
         let action = -1; // Left
-        game.move_zero(&ORDERS[&action]);
-        game.compare(&ORDERS[&(-action)]);
-        game.move_zero(&ORDERS[&action]);
+        game.action(action);
         for i in 0..4 {
             assert_eq!(game.grid[4 * i], 4);
         }
@@ -361,9 +369,7 @@ mod test_game {
             game.remove_zero(4 * i + 3);
         }
         let action = 1; // Right
-        game.move_zero(&ORDERS[&action]);
-        game.compare(&ORDERS[&(-action)]);
-        game.move_zero(&ORDERS[&action]);
+        game.action(action);
         for i in 0..4 {
             assert_eq!(game.grid[4 * i + 3], 4);
         }
@@ -405,9 +411,7 @@ mod test_game {
         game.remove_zero(14);
         game.remove_zero(15);
         let action = -1;
-        game.move_zero(&ORDERS[&action]);
-        game.compare(&ORDERS[&(-action)]);
-        game.move_zero(&ORDERS[&action]);
+        game.action(action);
         for i in 0..16 {
             if i == 8 || i == 12 {
                 assert_eq!(game.grid[i], 4);
@@ -464,9 +468,7 @@ mod test_game {
             game.remove_zero(i);
         }
         let action = 4; // Down
-        game.move_zero(&ORDERS[&action]);
-        game.compare(&ORDERS[&(-action)]);
-        game.move_zero(&ORDERS[&action]);
+        game.action(action);
         for i in 0..8 {
             assert_eq!(game.grid[i], 0);
         }

@@ -8,7 +8,7 @@ use ggez::{Context, GameResult};
 use std::usize;
 
 use crate::colors::{GameColors, GameColor, BACKGROUND, as_color};
-use crate::game::{Game, ORDERS};
+use crate::game::Game;
 
 // number of how many images will be drawn for an animation
 const NB_I: f32 = 8.;
@@ -286,12 +286,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
             if self.key != 0 {
                 if self.game.partial_move(self.key) {
                     self.before_grid = self.game.copy_grid();
-                    self.game.move_zero(&ORDERS[&self.key]);
-                    self.game.compare(&ORDERS[&(-self.key)]);
-                    self.game.move_zero(&ORDERS[&self.key]);
+                    self.game.action(self.key);
                     self.after_grid = self.game.copy_grid();
                     self.has_moved = true;
-                    self.direction = Some(ORDERS[&self.key]);
+                    self.direction = Some(self.game.direction(self.key));
                 }
                 self.key = 0;
             }
