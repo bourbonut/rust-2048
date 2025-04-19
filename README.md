@@ -18,3 +18,5 @@ git clone https://github.com/bourbonut/rust-2048.git && cd rust-2048
 ```bash
 cargo run --release
 ```
+
+Use arrow keys for actions
