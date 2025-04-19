@@ -22,7 +22,7 @@ pub fn main() -> GameResult {
     }
     let cb = ggez::ContextBuilder::new("game2048", "bourbonut")
         .add_resource_path(resources_path)
-        .window_mode(WindowMode::default().dimensions(500., 500.))
+        .window_mode(WindowMode::default().dimensions(500., 500.)) // vsync(false) to get more FPS
         .window_setup(WindowSetup::default().title("2048").icon("/logo.png"));
 
     let (mut ctx, event_loop) = cb.build()?;

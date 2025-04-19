@@ -12,11 +12,6 @@ use crate::game::{Game, ORDERS};
 
 // number of how many images will be drawn for an animation
 const NB_I: f32 = 8.;
-// number of how many homotheties will be applied for a number after an
-// addition
-const NB_H: f32 = 8.;
-
-const FPS: u32 = 240;
 
 #[derive(Debug)]
 pub struct Movement {
@@ -233,7 +228,7 @@ impl MainState {
 
         for &(pos, number) in self.additions.iter() {
             let location = self.locations[pos];
-            let game_color = &self.game_colors[&number].scale(0., NB_H);
+            let game_color = &self.game_colors[&number].scale(0., NB_I);
             draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
 
@@ -251,7 +246,7 @@ impl MainState {
 
         for &(pos, number) in self.additions.iter() {
             let location = self.locations[pos];
-            let game_color = &self.game_colors[&number].scale(i as f32, NB_H);
+            let game_color = &self.game_colors[&number].scale(i as f32, NB_I);
             draw_cell(&mut canvas, ctx, number, game_color, location)?;
         }
         canvas.finish(ctx)?;
@@ -282,25 +277,23 @@ impl MainState {
 }
 
 impl event::EventHandler<ggez::GameError> for MainState {
-    fn update(&mut self, ctx: &mut Context) -> GameResult {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult {
         if !self.game.is_gameover() && self.has_moved {
             self.game.random();
             self.has_moved = false;
         }
-        while ctx.time.check_update_time(FPS) {
-            if !self.game.is_gameover() {
-                if self.key != 0 {
-                    if self.game.partial_move(self.key) {
-                        self.before_grid = self.game.copy_grid();
-                        self.game.move_zero(&ORDERS[&self.key]);
-                        self.game.compare(&ORDERS[&(-self.key)]);
-                        self.game.move_zero(&ORDERS[&self.key]);
-                        self.after_grid = self.game.copy_grid();
-                        self.has_moved = true;
-                        self.direction = Some(ORDERS[&self.key]);
-                        self.key = 0;
-                    }
+        if !self.game.is_gameover() {
+            if self.key != 0 {
+                if self.game.partial_move(self.key) {
+                    self.before_grid = self.game.copy_grid();
+                    self.game.move_zero(&ORDERS[&self.key]);
+                    self.game.compare(&ORDERS[&(-self.key)]);
+                    self.game.move_zero(&ORDERS[&self.key]);
+                    self.after_grid = self.game.copy_grid();
+                    self.has_moved = true;
+                    self.direction = Some(ORDERS[&self.key]);
                 }
+                self.key = 0;
             }
         }
         Ok(())
