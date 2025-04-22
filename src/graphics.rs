@@ -76,8 +76,8 @@ impl MainState {
             before_grid: game.copy_grid(),
             after_grid: game.copy_grid(),
             game,
-            counter_1: NB_I as u32 + 1,
-            counter_2: NB_I as u32 + 1,
+            counter_1: NB_I as u32 + 1, // for movement animations
+            counter_2: NB_I as u32 + 1, // for addition animations
             key: 0,
             locations: (0..4)
                 .flat_map(|i| {
@@ -95,6 +95,7 @@ impl MainState {
         }
     }
 
+    /// Resets animation
     fn reset_animations(&mut self) {
         self.moves.clear();
         self.additions.clear();
@@ -102,6 +103,7 @@ impl MainState {
         self.static_locs.clear();
     }
 
+    /// Updates static locations by comparing the grid before and after an action
     fn update_static_locations(&mut self) {
         self.static_locs = self
             .before_grid
@@ -118,6 +120,8 @@ impl MainState {
             .collect();
     }
 
+    /// Updates `self.moves` for movements to animate and `self.additions` for additions to
+    /// animate
     fn update_moves(&mut self, directions: [[usize; 4]; 4]) {
         for direction in directions {
             let before = direction.map(|i| self.before_grid[i]);
@@ -126,6 +130,8 @@ impl MainState {
         }
     }
 
+    /// Fills `self.moves` and `self.additions` based on one layer of the grid before and after
+    /// an action
     fn moving(&mut self, before: [u32; 4], after: [u32; 4], direction: [usize; 4]) {
         let mut var_i: i8 = 3;
         let mut before = before;
@@ -178,6 +184,7 @@ impl MainState {
         }
     }
 
+    /// Returns a vector of prepared information for movement animations
     fn prepare_movements(&self) -> Vec<Movement> {
         self.moves
             .iter()
@@ -197,6 +204,7 @@ impl MainState {
             .collect()
     }
 
+    /// Prepare movement animations and addition animations
     fn prepare_animations(&mut self, directions: [[usize; 4]; 4]) {
         self.update_static_locations();
         self.update_moves(directions);
@@ -205,6 +213,7 @@ impl MainState {
         self.counter_2 = 0;
     }
 
+    /// Animates one frame of movement animations
     fn animate_movements(&self, ctx: &mut Context, i: u32) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
 
@@ -236,6 +245,7 @@ impl MainState {
         Ok(())
     }
 
+    /// Animates one frame of addition animations
     fn animate_additions(&self, ctx: &mut Context, i: u32) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
         for (pos, &number) in self.after_grid.iter().enumerate() {
@@ -253,6 +263,7 @@ impl MainState {
         Ok(())
     }
 
+    /// Draws the game over
     fn draw_gameover(&self, ctx: &mut Context) -> GameResult<()> {
         let mut canvas = Canvas::from_frame(ctx, self.background.rgb);
         let grid = self.game.copy_grid();

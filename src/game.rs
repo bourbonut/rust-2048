@@ -23,10 +23,10 @@ impl OrderIndex {
 
     fn value(&self) -> [[usize; 4]; 4] {
         let i = match self.0 {
-            1 => 0,
-            -1 => 1,
-            4 => 2,
-            -4 => 3,
+            1 => 0, // right
+            -1 => 1, // left
+            4 => 2, // down
+            -4 => 3, // up
             unknown => panic!("Index {unknown} not found in ORDERS")
         };
         ORDERS[i]
@@ -38,10 +38,10 @@ struct MovementIndex(i8);
 impl MovementIndex {
     fn value(&self) -> [usize; 4] {
         let i = match self.0 {
-            -4 => 0,
-            4 => 1,
-            -1 => 2,
-            1 => 3,
+            -4 => 0, // up
+            4 => 1, // down
+            -1 => 2, // left
+            1 => 3, // right
             unknown => panic!("Index {unknown} not found in MOVEMENTS")
         };
         MOVEMENTS[i]
@@ -70,10 +70,12 @@ impl Game {
         self.score = 0;
     }
 
+    /// Since `self.zero` stores indices of zero, removes zero value from `self.zero`
     fn remove_zero(&mut self, zero_value: usize) {
         self.zero.retain(|&x| x != zero_value as u32);
     }
 
+    /// Initializes first elements which are selected randomly and their values are `2` or `4`
     pub fn init_first_elements() -> Game {
         let mut game = Game::new();
         let a = rand::random_range(0..=15) as usize;
@@ -93,6 +95,7 @@ impl Game {
         game
     }
 
+    /// Generates the number 2 with 80% of probability else it gives 4
     fn random_2_4(&self) -> u32 {
         if rand::random::<f32>() < 0.8 {
             2
@@ -101,6 +104,7 @@ impl Game {
         }
     }
 
+    /// Separates zero values to non zero values by following the order
     pub fn move_zero(&mut self, order: &[[usize; 4]; 4]) {
         for suborder in order {
             let mut index: i8 = 3;
@@ -117,6 +121,7 @@ impl Game {
         }
     }
 
+    /// Makes one movement of the separation between zero values and non zeros values
     fn moving(&mut self, start: i8, end: i8, suborder: &[usize; 4]) {
         let next = start + 1;
         if next > 3 {
@@ -141,6 +146,7 @@ impl Game {
         }
     }
 
+    /// Compares values and adds them if they are the same
     pub fn compare(&mut self, order: &[[usize; 4]; 4]) {
         for suborder in order {
             for i in 0..3 {
@@ -157,6 +163,7 @@ impl Game {
         }
     }
 
+    /// Generates a random number in the grid (`2` or `4`)
     pub fn random(&mut self) {
         use rand::seq::IndexedRandom;
         let mut rng = rand::rng();
@@ -165,6 +172,7 @@ impl Game {
         self.remove_zero(r);
     }
 
+    /// Checks if there is a possible movement (`left`, `right`, `up` or `down`)
     fn r#move(&self) -> bool {
         if self.zero.len() != 0 {
             return true;
@@ -195,6 +203,8 @@ impl Game {
         condition
     }
 
+    /// Generates a condition function which checks if a located addition or located movement is
+    /// possible
     fn condition<'a>(&'a self, suborder: &'a [usize; 4], n: i8) -> impl Fn(&usize) -> bool + 'a {
         return move |&i| {
             !suborder.contains(&i)
@@ -203,6 +213,7 @@ impl Game {
         };
     }
 
+    /// Checks if the action is possible
     pub fn partial_move(&self, movement: i8) -> bool {
         let movement_index = MovementIndex(movement);
         let filled_cells: Vec<usize> = (0..16)
@@ -221,6 +232,7 @@ impl Game {
         condition
     }
 
+    /// Applies the action `up`, `down`, `left` or `right`
     pub fn action(&mut self, action: i8) {
         let order_index = OrderIndex(action);
         self.move_zero(&order_index.value());
@@ -228,14 +240,17 @@ impl Game {
         self.move_zero(&order_index.value());
     }
 
+    /// Checks is the game is over
     pub fn is_gameover(&self) -> bool {
         self.zero.len() == 0 && !self.r#move()
     }
 
+    /// Copies the game grid
     pub fn copy_grid(&self) -> [u32; 16] {
         self.grid.clone()
     }
 
+    /// Returns the order / direction of an action
     pub fn direction(&self, action: i8) -> [[usize; 4]; 4] {
         OrderIndex(action).value()
     }
